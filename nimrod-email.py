@@ -43,7 +43,7 @@ def fetch_emails(access_token, email_account, top_n=10):
     }
 
     # Use mailFolders/Inbox to target the actual inbox
-    url = f"https://graph.microsoft.com/v1.0/users/{email_account}/mailFolders/Inbox/messages?$top={top_n}"
+    url = f"https://graph.microsoft.com/v1.0/users/{EMAIL_ACCOUNT}/mailFolders/{MAILBOX_ID}/messages?$top={top_n}"
 
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
