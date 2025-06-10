@@ -26,7 +26,6 @@ GITHUB_BRANCH = os.getenv("GITHUB_BRANCH")
 
 AUTHORITY = f'https://login.microsoftonline.com/{TENANT_ID}'
 SCOPE = ["https://graph.microsoft.com/.default"]  # For app-only token
-SCOPES = ['Mail.Read']
 
 def get_access_token():
     app = ConfidentialClientApplication(
