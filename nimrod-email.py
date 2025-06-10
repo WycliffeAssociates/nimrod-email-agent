@@ -13,30 +13,33 @@ import requests
 
 
 # Email credentials and server
+IMAP_SERVER = ""
+EMAIL_ACCOUNT = ""
+MAILBOX_ID = ""
+CLIENT_ID = ""
+TENANT_ID = ""
+CLIENT_SECRET = ""
+REPO_URL = ""
+REPO_LOCAL_PATH = ""
+GITHUB_USERNAME = ""
+GITHUB_TOKEN = ""
+GITHUB_BRANCH = ""
+AUTHORITY = ""
+SCOPE = ""
+SCOPES = ""
+
+def get_access_token():
+    app = ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        client_credential=CLIENT_SECRET,
+        authority=AUTHORITY
+    )
+
+    result = app.acquire_token_for_client(scopes=SCOPE)
+    return result["access_token"]
 
 
-def get_graph_ql_access_token():
-        
-    # 1. Create the public client application
-    app = msal.PublicClientApplication(client_id=CLIENT_ID, authority=AUTHORITY)
-
-    # 2. Initiate device code flow
-    flow = app.initiate_device_flow(scopes=SCOPES)
-
-    if 'user_code' not in flow:
-        raise ValueError("Failed to create device flow")
-
-    print(f"Please go to {flow['verification_uri']} and enter the code: {flow['user_code']}")
-
-    # 3. Wait for user to authenticate
-    result = app.acquire_token_by_device_flow(flow)
-
-    if 'access_token' not in result:
-        raise Exception("Authentication failed: " + result.get("error_description", "No error description"))
-
-    return result['access_token']
-
-def fetch_emails(access_token, email_account, top_n=10):
+def fetch_emails(access_token, top_n=10):
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -62,14 +65,14 @@ def fetch_emails(access_token, email_account, top_n=10):
         }
 
         # Mark as read
-        mark_as_read_url = f"https://graph.microsoft.com/v1.0/users/{email_account}/messages/{email_id}"
-        patch_resp = requests.patch(
-            mark_as_read_url,
-            headers=headers,
-            json={"isRead": True}
-        )
-        if patch_resp.status_code not in (200, 204):
-            print(f"Failed to mark as read for email ID {email_id}: {patch_resp.status_code}, {patch_resp.text}")
+        # mark_as_read_url = f"https://graph.microsoft.com/v1.0/users/{email_account}/messages/{email_id}"
+        # patch_resp = requests.patch(
+        #     mark_as_read_url,
+        #     headers=headers,
+        #     json={"isRead": True}
+        # )
+        # if patch_resp.status_code not in (200, 204):
+        #     print(f"Failed to mark as read for email ID {email_id}: {patch_resp.status_code}, {patch_resp.text}")
 
         emails.append(email_obj)
 
@@ -102,13 +105,16 @@ def save_markdown_to_repo(repo, filename, markdown, branch):
     print(f"Pushed {filename} to branch {branch}")
 
 def main():
-    token = get_graph_ql_access_token()
-    emails = fetch_emails(token, EMAIL_ACCOUNT)
+    token = get_access_token()
+    emails = fetch_emails(token)
     print(f"Fetched {len(emails)} emails.")
+    for email in emails:
+        print(f"EmailID: {email['id']}")
 
     repo = get_or_update_repo(GITHUB_BRANCH)
 
     for msg in emails:
+        id = msg["id"]
         subject = msg["subject"] or "untitled"
         body_obj = msg.get("body", {})
         date_received = msg.get("dateReceived", "").replace(":", "-")
@@ -123,7 +129,7 @@ def main():
             markdown = "No usable content found."
 
         print(f"Processing email: {subject}")
-        filename = subject.replace(" ", "_").replace("/", "_") + f"{date_received}.md"
+        filename = subject.replace(" ", "_").replace("/", "_") + f"{date_received}#{id}.md"
         save_markdown_to_repo(repo, filename, markdown, branch=GITHUB_BRANCH)
         
 if __name__ == "__main__":
