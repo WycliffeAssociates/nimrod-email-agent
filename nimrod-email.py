@@ -13,20 +13,20 @@ import requests
 
 
 # Email credentials and server
-IMAP_SERVER = ""
-EMAIL_ACCOUNT = ""
-MAILBOX_ID = ""
-CLIENT_ID = ""
-TENANT_ID = ""
-CLIENT_SECRET = ""
-REPO_URL = ""
-REPO_LOCAL_PATH = ""
-GITHUB_USERNAME = ""
-GITHUB_TOKEN = ""
-GITHUB_BRANCH = ""
-AUTHORITY = ""
-SCOPE = ""
-SCOPES = ""
+EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT")
+MAILBOX_ID = os.getenv("MAILBOX_ID")
+CLIENT_ID = os.getenv("CLIENT_ID")
+TENANT_ID = os.getenv("TENANT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+REPO_URL = os.getenv("REPO_URL")
+REPO_LOCAL_PATH = os.getenv("REPO_LOCAL_PATH")
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_BRANCH = os.getenv("GITHUB_BRANCH")
+
+AUTHORITY = f'https://login.microsoftonline.com/{TENANT_ID}'
+SCOPE = ["https://graph.microsoft.com/.default"]  # For app-only token
+SCOPES = ['Mail.Read']
 
 def get_access_token():
     app = ConfidentialClientApplication(
