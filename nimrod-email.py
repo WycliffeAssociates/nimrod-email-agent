@@ -1,14 +1,7 @@
-import imaplib
-import email
-from email.header import decode_header
-from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 import os
 from git import Repo
-from msal import PublicClientApplication, ConfidentialClientApplication
-import msal
-import json
-import base64
+from msal import ConfidentialClientApplication
 import requests
 
 
