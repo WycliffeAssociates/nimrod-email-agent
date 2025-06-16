@@ -60,12 +60,12 @@ def fetch_emails(access_token, top_n=10):
 
     return emails
 
-def delete_outdated_emails(access_token):
+def delete_outdated_emails(access_token, git_repo):
     """
     Deletes outdated emails that were removed from the repository.
     """
 
-    deleted_files_in_repo = get_recently_deleted_files(REPO_LOCAL_PATH, past_hours=24)
+    deleted_files_in_repo = get_recently_deleted_files(git_repo, past_hours=24)
     deleted_message_ids = extract_message_ids(deleted_files_in_repo)
 
     headers = {
@@ -129,15 +129,14 @@ def convert_email_to_markdown(msg):
     return markdown, filename
 
 
-def get_recently_deleted_files(repo_path=".", past_hours=24):
-    repo = Repo(repo_path)
-    assert not repo.bare, "Repository is bare."
+def get_recently_deleted_files(repository, past_hours=24):
+    assert not repository.bare, "Repository is bare."
 
     # Calculate time window
     since = datetime.now() - timedelta(hours=past_hours)
     deleted_files = []
 
-    for commit in repo.iter_commits(since=since.isoformat()):
+    for commit in repository.iter_commits(since=since.isoformat()):
         for parent in commit.parents:
             diffs = parent.diff(commit, paths=None, create_patch=False)
             for diff in diffs:
@@ -162,20 +161,17 @@ def extract_message_ids(file_paths):
     return ids
 
 def main():
-    token = get_access_token()
-    emails = fetch_emails(token)
+    git_repo = get_or_update_repo(GITHUB_BRANCH)
+    outlook_token = get_access_token()
+    
+    delete_outdated_emails(outlook_token, git_repo)
+    emails = fetch_emails(outlook_token)
     print(f"Fetched {len(emails)} emails.")
-    for email in emails:
-        print(f"EmailID: {email['id']}")
-
-    repo = get_or_update_repo(GITHUB_BRANCH)
 
     for msg in emails:
         print(f"Processing email: {msg.get('subject', 'untitled')}")
         markdown, filename = convert_email_to_markdown(msg)
-        save_markdown_to_repo(repo, filename, markdown, branch=GITHUB_BRANCH)
-
-    delete_outdated_emails(token)
+        save_markdown_to_repo(git_repo, filename, markdown, branch=GITHUB_BRANCH)
         
 if __name__ == "__main__":
     main()
