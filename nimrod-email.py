@@ -85,6 +85,29 @@ def save_markdown_to_repo(repo, filename, markdown, branch):
     repo.remotes.origin.push(refspec=f"{branch}:{branch}")
     print(f"Pushed {filename} to branch {branch}")
 
+def convert_email_to_markdown(msg):
+    id = msg["id"]
+    subject = msg.get("subject") or "untitled"
+    body_obj = msg.get("body", {})
+    date_received = msg.get("dateReceived", "").replace(":", "-")
+    content_type = body_obj.get("contentType", "").lower()
+    content = body_obj.get("content", "")
+
+    if content_type == "html":
+        markdown = md(content)
+    elif content_type == "text":
+        markdown = content.strip()
+    else:
+        markdown = "No usable content found."
+
+    filename = (
+        subject.replace(" ", "_").replace("/", "_")
+        + f"{date_received}#messageid#{id}.md"
+    )
+
+    return markdown, filename
+
+
 def main():
     token = get_access_token()
     emails = fetch_emails(token)
@@ -95,23 +118,11 @@ def main():
     repo = get_or_update_repo(GITHUB_BRANCH)
 
     for msg in emails:
-        id = msg["id"]
-        subject = msg["subject"] or "untitled"
-        body_obj = msg.get("body", {})
-        date_received = msg.get("dateReceived", "").replace(":", "-")
-        content_type = body_obj.get("contentType", "").lower()
-        content = body_obj.get("content", "")
-
-        if content_type == "html":
-            markdown = md(content)
-        elif content_type == "text":
-            markdown = content.strip()
-        else:
-            markdown = "No usable content found."
-
-        print(f"Processing email: {subject}")
-        filename = subject.replace(" ", "_").replace("/", "_") + f"{date_received}#{id}.md"
+        print(f"Processing email: {msg.get('subject', 'untitled')}")
+        markdown, filename = convert_email_to_markdown(msg)
         save_markdown_to_repo(repo, filename, markdown, branch=GITHUB_BRANCH)
+
+
         
 if __name__ == "__main__":
     main()
