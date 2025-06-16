@@ -55,17 +55,6 @@ def fetch_emails(access_token, top_n=10):
             "id": email_id,
             "dateReceived": item.get("receivedDateTime")
         }
-
-        # Mark as read
-        # mark_as_read_url = f"https://graph.microsoft.com/v1.0/users/{email_account}/messages/{email_id}"
-        # patch_resp = requests.patch(
-        #     mark_as_read_url,
-        #     headers=headers,
-        #     json={"isRead": True}
-        # )
-        # if patch_resp.status_code not in (200, 204):
-        #     print(f"Failed to mark as read for email ID {email_id}: {patch_resp.status_code}, {patch_resp.text}")
-
         emails.append(email_obj)
 
     return emails
