@@ -31,6 +31,30 @@ def get_access_token():
     result = app.acquire_token_for_client(scopes=SCOPE)
     return result["access_token"]
 
+def get_delegated_access_token():
+    import msal
+    # 1. Create the public client application
+    app = msal.PublicClientApplication(
+        client_id=CLIENT_ID,
+        authority=AUTHORITY
+    )
+
+    # Acquire token via device flow
+    flow = app.initiate_device_flow(scopes= ["Mail.ReadWrite", "User.Read"])
+    if "user_code" not in flow:
+        raise Exception("Device flow initiation failed")
+
+    print(flow["message"])  # Instruct user to visit URL and enter code
+
+    # Block and wait for user to complete auth
+    result = app.acquire_token_by_device_flow(flow)
+
+    if "access_token" not in result:
+        raise Exception(f"Token acquisition failed: {result.get('error_description')}")
+
+    access_token = result["access_token"]
+    print("Access token acquired.")
+    return access_token
 
 def fetch_emails(access_token, top_n=10):
     headers = {
