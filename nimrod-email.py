@@ -3,7 +3,8 @@ import os
 from git import Repo
 from msal import ConfidentialClientApplication
 import requests
-
+from datetime import datetime, timedelta
+import re
 
 # Email credentials and server
 EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT")
@@ -59,6 +60,26 @@ def fetch_emails(access_token, top_n=10):
 
     return emails
 
+def delete_outdated_emails(access_token):
+    """
+    Deletes outdated emails that were removed from the repository.
+    """
+
+    deleted_files_in_repo = get_recently_deleted_files(REPO_LOCAL_PATH, past_hours=24)
+    deleted_message_ids = extract_message_ids(deleted_files_in_repo)
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    for msg_id in deleted_message_ids:
+        url = f"https://graph.microsoft.com/v1.0/users/{EMAIL_ACCOUNT}/mailFolders/{MAILBOX_ID}/messages/{msg_id}"
+        response = requests.delete(url, headers=headers)
+        if response.status_code not in (204, 202):
+            print(f"Failed to delete email {msg_id}: {response.status_code} {response.text}")
+        else:
+            print(f"Deleted email {msg_id}")
+
 def get_or_update_repo(branch):
     if not os.path.exists(REPO_LOCAL_PATH):
         print("Cloning repository...")
@@ -108,6 +129,38 @@ def convert_email_to_markdown(msg):
     return markdown, filename
 
 
+def get_recently_deleted_files(repo_path=".", past_hours=24):
+    repo = Repo(repo_path)
+    assert not repo.bare, "Repository is bare."
+
+    # Calculate time window
+    since = datetime.now() - timedelta(hours=past_hours)
+    deleted_files = []
+
+    for commit in repo.iter_commits(since=since.isoformat()):
+        for parent in commit.parents:
+            diffs = parent.diff(commit, paths=None, create_patch=False)
+            for diff in diffs:
+                if diff.change_type == "D":  # 'D' for Deleted
+                    deleted_files.append(diff.a_path)
+
+    return deleted_files
+
+def extract_message_ids(file_paths):
+    """
+    Extract the ID after '#messageid#' in each path, excluding file extensions.
+    """
+    pattern = re.compile(r"#messageid#([^.]+)")
+
+    ids = []
+
+    for path in file_paths:
+        match = pattern.search(path)
+        if match:
+            ids.append(match.group(1))  # Already excludes extension due to [^.]+
+
+    return ids
+
 def main():
     token = get_access_token()
     emails = fetch_emails(token)
@@ -122,7 +175,7 @@ def main():
         markdown, filename = convert_email_to_markdown(msg)
         save_markdown_to_repo(repo, filename, markdown, branch=GITHUB_BRANCH)
 
-
+    delete_outdated_emails(token)
         
 if __name__ == "__main__":
     main()
