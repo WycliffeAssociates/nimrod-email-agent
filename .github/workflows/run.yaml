@@ -1,0 +1,56 @@
+name: Run Email Agent
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # Run every 30 minutes
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  run-email-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13" # Match your Python version
+
+      - name: Set Build Secrets
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          EMAIL_ACCOUNT: "op://DevOps/Nimrod-Outlook-Script/EMAIL_ACCOUNT"
+          MAILBOX_ID: "op://DevOps/Nimrod-Outlook-Script/MAILBOX_ID"
+          CLIENT_ID: "op://DevOps/Nimrod-Outlook-Script/CLIENT_ID"
+          TENANT_ID: "op://DevOps/Nimrod-Outlook-Script/TENANT_ID"
+          CLIENT_SECRET: "op://DevOps/Nimrod-Outlook-Script/CLIENT_SECRET"
+          REPO_URL: "op://DevOps/Nimrod-Outlook-Script/REPO_URL"
+          REPO_LOCAL_PATH: "op://DevOps/Nimrod-Outlook-Script/REPO_LOCAL_PATH"
+          GITHUB_USERNAME: "op://DevOps/Nimrod-Outlook-Script/GITHUB_USERNAME"
+          GITHUB_TOKEN: "op://DevOps/Nimrod-Outlook-Script/GITHUB_TOKEN"
+          GITHUB_BRANCH: "op://DevOps/Nimrod-Outlook-Script/GITHUB_BRANCH"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Email Agent
+        env:
+          EMAIL_ACCOUNT: ${{ env.EMAIL_ACCOUNT }}
+          MAILBOX_ID: ${{ env.MAILBOX_ID }}
+          CLIENT_ID: ${{ env.CLIENT_ID }}
+          TENANT_ID: ${{ env.TENANT_ID }}
+          CLIENT_SECRET: ${{ env.CLIENT_SECRET }}
+          REPO_URL: ${{ env.REPO_URL }}
+          REPO_LOCAL_PATH: ${{ env.REPO_LOCAL_PATH }}
+          GITHUB_USERNAME: ${{ env.GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+          GITHUB_BRANCH: ${{ env.GITHUB_BRANCH }}
+        run: |
+          python nimrod-email.py
