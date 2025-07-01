@@ -32,7 +32,7 @@ jobs:
           REPO_URL: "op://DevOps/Nimrod-Outlook-Script/REPO_URL"
           REPO_LOCAL_PATH: "op://DevOps/Nimrod-Outlook-Script/REPO_LOCAL_PATH"
           GITHUB_USERNAME: "op://DevOps/Nimrod-Outlook-Script/GITHUB_USERNAME"
-          GITHUB_TOKEN: "op://DevOps/Nimrod-Outlook-Script/GITHUB_TOKEN"
+          GITHUB_TOKEN: "op://DevOps/Nimrod-Outlook-Script/GITHUB_PAT"
           GITHUB_BRANCH: "op://DevOps/Nimrod-Outlook-Script/GITHUB_BRANCH"
 
       - name: Install dependencies
